@@ -1,1 +1,0 @@
-c:\nwjs\nw.exe C:\Users\sweetrelish\Desktop\WheelDealz
