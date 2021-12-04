@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="Car.cs" />
     <Compile Include="ExtensionMethods\IWebElementExtensions.cs" />
+    <Compile Include="Facebook.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
