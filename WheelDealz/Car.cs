@@ -8,6 +8,7 @@ namespace WheelDealz
 {
     public class Car
     {
+        public string Url;
         public int Year;
         public string MakeModel;
         public double Price;
@@ -19,6 +20,7 @@ namespace WheelDealz
         public override string ToString()
         {
             var result = "";
+            result += $"{Url}{Environment.NewLine}";
             result += $"{Year}{Environment.NewLine}";
             result += $"{MakeModel}{Environment.NewLine}";
             result += $"{Price}{Environment.NewLine}";

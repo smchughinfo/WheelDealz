@@ -18,20 +18,36 @@ namespace WheelDealz
         public static int shortWaitTime = 500;
         public static int longWaitTime = 5000;
         static List<Car> cars = new List<Car>();
+        static int maxCarsToScrape = 2;
         static void Main(string[] args)
         {
-            var facebookUrls = Facebook.GetFacebookUrls().Take(5);
-            foreach(var url in facebookUrls)
+            cars.AddRange(GetFacebookCars());
+            cars.AddRange(GetCraigslistCars());
+
+            SaveCarListToDisk();
+        }
+
+        static List<Car> GetFacebookCars()
+        {
+            var cars = new List<Car>();
+            var facebookUrls = Facebook.GetFacebookUrls().Take(maxCarsToScrape);
+            foreach (var url in facebookUrls)
             {
                 var car = Facebook.ScrapeFacebookPage(url);
-
-                var newCar = !cars.Any(c => c.ToString() == car.ToString());
-                if(newCar)
-                {
-                    cars.Add(car);
-                }
+                cars.Add(car);
             }
-            SaveCarListToDisk();
+            return cars;
+        }
+
+        static List<Car> GetCraigslistCars()
+        {
+            var cars = new List<Car>();
+            var craigslistUrls = Craigslist.GetCraigslistUrls().Take(maxCarsToScrape);
+            foreach(var url in craigslistUrls)
+            {
+                var car = Craigslist.ScrapeCraigslistPage(url);
+            }
+            return cars;
         }
 
         static void SaveCarListToDisk()

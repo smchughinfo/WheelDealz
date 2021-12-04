@@ -57,6 +57,7 @@ namespace WheelDealz
 
             return new Car
             {
+                Url = url,
                 Year = Convert.ToInt32(year),
                 Price = price,
                 MakeModel = makeModel,
