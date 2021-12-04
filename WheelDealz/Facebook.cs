@@ -13,19 +13,36 @@ namespace WheelDealz
     {
         public static List<string> GetFacebookUrls()
         {
-            Program.driver.Navigate().GoToUrl("https://www.facebook.com/marketplace/category/vehicles?minPrice=500&maxPrice=1500&minYear=2000&exact=false");
-            Thread.Sleep(Program.longWaitTime);
-            var vehicles = Program.driver.FindElements(By.CssSelector("[href^='/marketplace/item/']"));
+            Program.Driver.Navigate().GoToUrl($"https://www.facebook.com/marketplace/category/vehicles?minPrice={Program.MinPrice}&maxPrice={Program.MaxPrice}&minYear={Program.MaxPrice}&exact=false");
+            Thread.Sleep(Program.LongWaitTime);
 
+            SetDistance();
+
+            var vehicles = Program.Driver.FindElements(By.CssSelector("[href^='/marketplace/item/']"));
             return vehicles.Select(v => v.GetAttribute("href")).ToList();
+        }
+
+        private static void SetDistance()
+        {
+            Program.Driver.FindElement(By.XPath("//*[text()='Hamilton, Ohio']")).Click();
+            Thread.Sleep(Program.ShortWaitTime);
+
+            Program.Driver.FindElement(By.CssSelector("body")).SendKeys(Keys.Tab, 3);
+            Program.Driver.FindElement(By.CssSelector(":focus")).SendKeys(Keys.Down);
+            Thread.Sleep(Program.ShortWaitTime);
+            Program.Driver.FindElement(By.XPath($"//*[text()='{Program.DistanceFromMe} ']")).Click();
+            Thread.Sleep(Program.ShortWaitTime);
+            Program.Driver.FindElement(By.CssSelector("body")).SendKeys(Keys.Tab, 3);
+            Program.Driver.FindElement(By.CssSelector(":focus")).SendKeys(Keys.Enter);
+            Thread.Sleep(Program.LongWaitTime);
         }
 
         public static Car ScrapeFacebookPage(string url)
         {
-            Program.driver.Navigate().GoToUrl(url);
-            Thread.Sleep(Program.longWaitTime);
+            Program.Driver.Navigate().GoToUrl(url);
+            Thread.Sleep(Program.LongWaitTime);
 
-            var priceText = Program.driver.FindElement(By.XPath("//*[starts-with(.,'$')]")); // POSSIBLY USEFUL. IF YOU DO GETPARENT THREE TIMES HERE ALL THE INFORMATION BELOW (EXCEPT IMAGES) IS IN THE STRING THAT'S RETURNED. I DID THIS LAST SO I FIGURED IT OUT AFTER THAT CODE WAS DONE AND IM NOT CHANGING IT. 
+            var priceText = Program.Driver.FindElement(By.XPath("//*[starts-with(.,'$')]")); // POSSIBLY USEFUL. IF YOU DO GETPARENT THREE TIMES HERE ALL THE INFORMATION BELOW (EXCEPT IMAGES) IS IN THE STRING THAT'S RETURNED. I DID THIS LAST SO I FIGURED IT OUT AFTER THAT CODE WAS DONE AND IM NOT CHANGING IT. 
             var price = Convert.ToDouble(priceText.Text.Replace("$", ""));
             var makeModelAndYear = priceText.GetParent().Text.Split('\n')[0];
             var year = makeModelAndYear.Split(' ')[0];
@@ -34,9 +51,9 @@ namespace WheelDealz
             string sellersDescription = null;
             try
             {
-                var seeMoreButton = Program.driver.FindElement(By.XPath("//*[text()='See more']"));
+                var seeMoreButton = Program.Driver.FindElement(By.XPath("//*[text()='See more']"));
                 seeMoreButton.Click();
-                Thread.Sleep(Program.shortWaitTime);
+                Thread.Sleep(Program.ShortWaitTime);
                 sellersDescription = seeMoreButton.GetParent().GetParent().Text;
             }
             catch { }
@@ -45,13 +62,13 @@ namespace WheelDealz
             int milesDriven = -1;
             try
             {
-                aboutText = Program.driver.FindElement(By.XPath("//*[starts-with(.,'Driven')]")).Text;
+                aboutText = Program.Driver.FindElement(By.XPath("//*[starts-with(.,'Driven')]")).Text;
                 milesDriven = Convert.ToInt32(aboutText.Split('\r')[0].Replace("Driven", "").Replace("miles", "").Replace(",", "").Trim());
             }
             catch
             { }
 
-            var allImages = Program.driver.FindElements(By.CssSelector("img[src^='https://scontent.fluk1-1.fna.fbcdn.net']")).Select(i => i.GetAttribute("src")).ToList();
+            var allImages = Program.Driver.FindElements(By.CssSelector("img[src^='https://scontent.fluk1-1.fna.fbcdn.net']")).Select(i => i.GetAttribute("src")).ToList();
             var thisVehiclesImagePathRoot = string.Join("/", allImages[0].Split('/').Take(5)); // theres other images on the page that start with this part of the url. first image happens to be image of the car we want. so use that to get the part of the url that only matches images of the car we want.
             var vehicleImages = allImages.Where(i => i.Contains(thisVehiclesImagePathRoot)).Distinct().ToList();
 

@@ -14,15 +14,21 @@ namespace WheelDealz
 {
     class Program
     {
-        public static IWebDriver driver = new ChromeDriver();
-        public static int shortWaitTime = 500;
-        public static int longWaitTime = 5000;
-        static List<Car> cars = new List<Car>();
-        static int maxCarsToScrape = 2;
+        public static IWebDriver Driver = new ChromeDriver();
+        public static int ShortWaitTime = 500;
+        public static int LongWaitTime = 5000;
+
+        public static int MinYear = 2000;
+        public static int MinPrice = 500;
+        public static int MaxPrice = 2000;
+        public static int DistanceFromMe = 20; // can only use the numbers on facebooks distance chooser
+
+        static List<Car> Cars = new List<Car>();
+        static int MaxCarsToScrape = 2;
         static void Main(string[] args)
         {
-            cars.AddRange(GetFacebookCars());
-            cars.AddRange(GetCraigslistCars());
+            Cars.AddRange(GetFacebookCars());
+            Cars.AddRange(GetCraigslistCars());
 
             SaveCarListToDisk();
         }
@@ -30,7 +36,7 @@ namespace WheelDealz
         static List<Car> GetFacebookCars()
         {
             var cars = new List<Car>();
-            var facebookUrls = Facebook.GetFacebookUrls().Take(maxCarsToScrape);
+            var facebookUrls = Facebook.GetFacebookUrls().Take(MaxCarsToScrape);
             foreach (var url in facebookUrls)
             {
                 var car = Facebook.ScrapeFacebookPage(url);
@@ -42,7 +48,7 @@ namespace WheelDealz
         static List<Car> GetCraigslistCars()
         {
             var cars = new List<Car>();
-            var craigslistUrls = Craigslist.GetCraigslistUrls().Take(maxCarsToScrape);
+            var craigslistUrls = Craigslist.GetCraigslistUrls().Take(MaxCarsToScrape);
             foreach(var url in craigslistUrls)
             {
                 var car = Craigslist.ScrapeCraigslistPage(url);
@@ -53,7 +59,7 @@ namespace WheelDealz
         static void SaveCarListToDisk()
         {
             var result = "";
-            foreach (var car in cars)
+            foreach (var car in Cars)
             {
                 result += car.ToString() + Environment.NewLine + "<><><><><><><><><><><><><><><><><><><><><><><><><><>" + Environment.NewLine;
             }
