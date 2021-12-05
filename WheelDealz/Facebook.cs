@@ -19,7 +19,10 @@ namespace WheelDealz
             SetDistance();
 
             var vehicles = Program.Driver.FindElements(By.CssSelector("[href^='/marketplace/item/']"));
-            return vehicles.Select(v => v.GetAttribute("href")).ToList();
+            return vehicles.Select(v => {
+                var href = v.GetAttribute("href");
+                return href.Substring(0, href.IndexOf("?")); // they put in a tracking code that changes every time which makes it hard to compare urls
+            }).ToList();
         }
 
         private static void SetDistance()
@@ -34,6 +37,7 @@ namespace WheelDealz
             Thread.Sleep(Program.ShortWaitTime);
             Program.Driver.FindElement(By.CssSelector("body")).SendKeys(Keys.Tab, 3);
             Program.Driver.FindElement(By.CssSelector(":focus")).SendKeys(Keys.Enter);
+            Thread.Sleep(Program.LongWaitTime);
             Thread.Sleep(Program.LongWaitTime);
         }
 
@@ -68,10 +72,6 @@ namespace WheelDealz
             catch
             { }
 
-            var allImages = Program.Driver.FindElements(By.CssSelector("img[src^='https://scontent.fluk1-1.fna.fbcdn.net']")).Select(i => i.GetAttribute("src")).ToList();
-            var thisVehiclesImagePathRoot = string.Join("/", allImages[0].Split('/').Take(5)); // theres other images on the page that start with this part of the url. first image happens to be image of the car we want. so use that to get the part of the url that only matches images of the car we want.
-            var vehicleImages = allImages.Where(i => i.Contains(thisVehiclesImagePathRoot)).Distinct().ToList();
-
             return new Car
             {
                 Url = url,
@@ -81,8 +81,16 @@ namespace WheelDealz
                 Mileage = Convert.ToInt32(milesDriven),
                 Description1 = sellersDescription,
                 Description2 = aboutText,
-                ImageUrls = vehicleImages
+                ImageUrls = GetImages(),
+                ScrapeDate = DateTime.Now
             };
+        }
+
+        static List<string> GetImages()
+        {
+            var allImages = Program.Driver.FindElements(By.CssSelector("img[src^='https://scontent.fluk1-1.fna.fbcdn.net']")).Select(i => i.GetAttribute("src")).ToList();
+            var thisVehiclesImagePathRoot = string.Join("/", allImages[0].Split('/').Take(5)); // theres other images on the page that start with this part of the url. first image happens to be image of the car we want. so use that to get the part of the url that only matches images of the car we want.
+            return allImages.Where(i => i.Contains(thisVehiclesImagePathRoot)).Distinct().ToList();
         }
     }
 }

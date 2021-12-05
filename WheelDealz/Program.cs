@@ -24,36 +24,76 @@ namespace WheelDealz
         public static int DistanceFromMe = 20; // can only use the numbers on facebooks distance chooser
 
         static List<Car> Cars = new List<Car>();
-        static int MaxCarsToScrape = 2;
+        static int MaxCarsToScrapePerSite = Int32.MaxValue;
+        
+        static string dataDir = @"C:\Users\sweetrelish\Desktop\smchughinfo.github.io\WheelDealz\";
+        static string dataFileName = "data.txt";
+        static string logFileName = "log.txt";
+        static string dataFilePath = Path.Combine(dataDir, dataFileName);
+        static string logFilePath = Path.Combine(dataDir, logFileName);
+
+        static string stringifiedCarDelimeter = Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + "EEA7B7D1-011A-4117-90CC-142FA482C8E1" + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine;
         static void Main(string[] args)
         {
-            Cars.AddRange(GetFacebookCars());
-            Cars.AddRange(GetCraigslistCars());
+            LoadCarListFromDisk();
+
+            Cars.AddRange(GetCars(Facebook.GetFacebookUrls, Facebook.ScrapeFacebookPage));
+            //Cars.AddRange(GetCars(Craigslist.GetCraigslistUrls, Craigslist.ScrapeCraigslistPage));
 
             SaveCarListToDisk();
         }
 
-        static List<Car> GetFacebookCars()
+        static List<Car> GetCars(Func<List<string>> getCarUrls, Func<string, Car> getCarFromUrl)
         {
             var cars = new List<Car>();
-            var facebookUrls = Facebook.GetFacebookUrls().Take(MaxCarsToScrape);
-            foreach (var url in facebookUrls)
+
+            List<string> newUrls = new List<string>();
+            try
             {
-                var car = Facebook.ScrapeFacebookPage(url);
-                cars.Add(car);
+                newUrls = getCarUrls();
             }
+            catch (Exception ex)
+            {
+                File.AppendAllText(logFilePath, $"ERROR GETTING THE URLS - {ex.Message}{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}");
+                return cars;
+            }
+
+            var existingUrls = Cars.Select(c => c.Url);
+            var urlsToScrape = newUrls.Where(newUrl => existingUrls.Contains(newUrl) == false).ToList();
+
+            var maxCarsToScrape = Math.Min(urlsToScrape.Count, MaxCarsToScrapePerSite);
+
+            for(var i = 0; i < maxCarsToScrape; i++)
+            {
+                var url = urlsToScrape[i];
+
+                try
+                {
+                    var car = getCarFromUrl(url);
+                    cars.Add(car);
+                }
+                catch (Exception ex)
+                {
+                    File.AppendAllText(logFilePath, $"ERROR GETTING A CAR - {url}{Environment.NewLine}{ex.Message}{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}");
+                }
+            }
+
             return cars;
         }
 
-        static List<Car> GetCraigslistCars()
+        static void LoadCarListFromDisk()
         {
-            var cars = new List<Car>();
-            var craigslistUrls = Craigslist.GetCraigslistUrls().Take(MaxCarsToScrape);
-            foreach(var url in craigslistUrls)
+            if(!File.Exists(dataFilePath))
             {
-                var car = Craigslist.ScrapeCraigslistPage(url);
+                return;
             }
-            return cars;
+
+            var stringifiedCars = File.ReadAllText(dataFilePath).Split(new string[] { Program.stringifiedCarDelimeter }, StringSplitOptions.None);
+            stringifiedCars = stringifiedCars.Where(c => !string.IsNullOrWhiteSpace(c)).ToArray();
+            foreach (var stringifiedCar in stringifiedCars)
+            {
+                Cars.Add(new Car(stringifiedCar));
+            }
         }
 
         static void SaveCarListToDisk()
@@ -61,9 +101,10 @@ namespace WheelDealz
             var result = "";
             foreach (var car in Cars)
             {
-                result += car.ToString() + Environment.NewLine + "<><><><><><><><><><><><><><><><><><><><><><><><><><>" + Environment.NewLine;
+                result += car.ToString() + stringifiedCarDelimeter;
             }
-            File.WriteAllText(@"c:\users\sweetrelish\desktop\idk.txt", result);
+            
+            File.WriteAllText(dataFilePath, result);
         }
     }
 }
