@@ -9,6 +9,8 @@ using OpenQA.Selenium.Support.UI;
 using WheelDealz.ExtensionMethods;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Net.Http;
+using System.Net;
 
 namespace WheelDealz
 {
@@ -38,7 +40,7 @@ namespace WheelDealz
             LoadCarListFromDisk();
 
             Cars.AddRange(GetCars(Facebook.GetFacebookUrls, Facebook.ScrapeFacebookPage));
-            //Cars.AddRange(GetCars(Craigslist.GetCraigslistUrls, Craigslist.ScrapeCraigslistPage));
+            Cars.AddRange(GetCars(Craigslist.GetCraigslistUrls, Craigslist.ScrapeCraigslistPage));
 
             SaveCarListToDisk();
         }
@@ -58,7 +60,8 @@ namespace WheelDealz
                 return cars;
             }
 
-            var existingUrls = Cars.Select(c => c.Url);
+            var existingUrls = Cars.Select(c => c.Url).ToList();
+            existingUrls.AddRange(GetLogFileErrorUrls());
             var urlsToScrape = newUrls.Where(newUrl => existingUrls.Contains(newUrl) == false).ToList();
 
             var maxCarsToScrape = Math.Min(urlsToScrape.Count, MaxCarsToScrapePerSite);
@@ -74,11 +77,33 @@ namespace WheelDealz
                 }
                 catch (Exception ex)
                 {
-                    File.AppendAllText(logFilePath, $"ERROR GETTING A CAR - {url}{Environment.NewLine}{ex.Message}{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}");
+                    var isReallyAnError = !CanIgnoreScrapeError(url);
+                    if (isReallyAnError)
+                    {
+                        File.AppendAllText(logFilePath, $"ERROR GETTING A CAR - {url}{Environment.NewLine}{ex.Message}{Environment.NewLine}{ex.StackTrace}{Environment.NewLine}{Environment.NewLine}");
+                    }
                 }
             }
 
             return cars;
+        }
+
+        static bool CanIgnoreScrapeError(string url)
+        {
+            var canIgnoreStrings = new List<string>()
+            {
+                "404 Error" // found on criaglist. 
+            };
+
+            try
+            {
+                var html = (new WebClient()).DownloadString(url);
+                return canIgnoreStrings.Any(s => html.Contains(s));
+            }
+            catch // this can happen if 404. ...probably other things too.
+            {
+                return false; 
+            }
         }
 
         static void LoadCarListFromDisk()
@@ -105,6 +130,16 @@ namespace WheelDealz
             }
             
             File.WriteAllText(dataFilePath, result);
+        }
+
+        static List<string> GetLogFileErrorUrls()
+        {
+            var regexPattern = "https://.*?$";
+            var lines = File.ReadAllLines(logFilePath).ToList();
+            lines = lines.Where(l => Regex.IsMatch(l, regexPattern)).ToList();
+            lines = lines.Select(l => Regex.Match(l, regexPattern).Value).ToList();
+
+            return lines;
         }
     }
 }
