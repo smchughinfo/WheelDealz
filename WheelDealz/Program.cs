@@ -11,6 +11,8 @@ using System.Text.RegularExpressions;
 using System.IO;
 using System.Net.Http;
 using System.Net;
+using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace WheelDealz
 {
@@ -31,8 +33,10 @@ namespace WheelDealz
         static string dataDir = @"C:\Users\sweetrelish\Desktop\smchughinfo.github.io\WheelDealz\";
         static string dataFileName = "data.txt";
         static string logFileName = "log.txt";
+        static string jsonFileName = "data.json";
         static string dataFilePath = Path.Combine(dataDir, dataFileName);
         static string logFilePath = Path.Combine(dataDir, logFileName);
+        static string jsonFilePath = Path.Combine(dataDir, jsonFileName);
 
         static string stringifiedCarDelimeter = Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + "EEA7B7D1-011A-4117-90CC-142FA482C8E1" + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine;
         static void Main(string[] args)
@@ -43,6 +47,7 @@ namespace WheelDealz
             Cars.AddRange(GetCars(Craigslist.GetCraigslistUrls, Craigslist.ScrapeCraigslistPage));
 
             SaveCarListToDisk();
+            ExportJsonAndUpload();
         }
 
         static List<Car> GetCars(Func<List<string>> getCarUrls, Func<string, Car> getCarFromUrl)
@@ -140,6 +145,14 @@ namespace WheelDealz
             lines = lines.Select(l => Regex.Match(l, regexPattern).Value).ToList();
 
             return lines;
+        }
+
+        static void ExportJsonAndUpload()
+        {
+            var json = JsonConvert.SerializeObject(Cars);
+            File.WriteAllText(jsonFilePath, json);
+
+            Process.Start("git-upload-script.bat");
         }
     }
 }
