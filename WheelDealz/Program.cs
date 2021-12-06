@@ -55,7 +55,7 @@ namespace WheelDealz
             while (true)
             {
                 Driver = new ChromeDriver();
-                //Driver.Manage().Window.Minimize();
+                Driver.Manage().Window.Maximize();
                 Thread.Sleep(LongWaitTime);
                 Scrape();
                 Driver.Quit();
