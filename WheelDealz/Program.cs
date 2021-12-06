@@ -59,7 +59,7 @@ namespace WheelDealz
                 Thread.Sleep(LongWaitTime);
                 Scrape();
                 Driver.Quit();
-                Thread.Sleep(2000);
+                Thread.Sleep(PollPeriod);
             }
             
         }
