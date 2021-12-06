@@ -13,12 +13,13 @@ using System.Net.Http;
 using System.Net;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace WheelDealz
 {
     class Program
     {
-        public static IWebDriver Driver = new ChromeDriver();
+        public static IWebDriver Driver;
         public static int ShortWaitTime = 500;
         public static int LongWaitTime = 5000;
 
@@ -27,19 +28,43 @@ namespace WheelDealz
         public static int MaxPrice = 2000;
         public static int DistanceFromMe = 20; // can only use the numbers on facebooks distance chooser
 
+        public static int PollPeriod = 1000 * 60 * 60; // every hour
+
         static List<Car> Cars = new List<Car>();
         static int MaxCarsToScrapePerSite = Int32.MaxValue;
         
         static string dataDir = @"C:\Users\sweetrelish\Desktop\smchughinfo.github.io\WheelDealz\";
         static string dataFileName = "data.txt";
         static string logFileName = "log.txt";
-        static string jsonFileName = "data.json";
+        static string jsonFileName = "data.js";
         static string dataFilePath = Path.Combine(dataDir, dataFileName);
         static string logFilePath = Path.Combine(dataDir, logFileName);
         static string jsonFilePath = Path.Combine(dataDir, jsonFileName);
 
         static string stringifiedCarDelimeter = Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + "EEA7B7D1-011A-4117-90CC-142FA482C8E1" + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine + Environment.NewLine;
+
+        [DllImport("user32.dll")]
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        public const int SW_SHOWMINIMIZED = 2;
+        static IntPtr winHandle = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
+        
         static void Main(string[] args)
+        {
+            ShowWindow(winHandle, SW_SHOWMINIMIZED);
+
+            while (true)
+            {
+                Driver = new ChromeDriver();
+                Driver.Manage().Window.Minimize();
+                Thread.Sleep(LongWaitTime);
+                Scrape();
+                Driver.Quit();
+                Thread.Sleep(2000);
+            }
+            
+        }
+
+        static void Scrape()
         {
             LoadCarListFromDisk();
 
@@ -150,7 +175,7 @@ namespace WheelDealz
         static void ExportJsonAndUpload()
         {
             var json = JsonConvert.SerializeObject(Cars);
-            File.WriteAllText(jsonFilePath, json);
+            File.WriteAllText(jsonFilePath, $"var carData={json}");
 
             Process.Start("git-upload-script.bat");
         }
