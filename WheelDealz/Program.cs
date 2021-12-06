@@ -55,7 +55,7 @@ namespace WheelDealz
             while (true)
             {
                 Driver = new ChromeDriver();
-                Driver.Manage().Window.Minimize();
+                //Driver.Manage().Window.Minimize();
                 Thread.Sleep(LongWaitTime);
                 Scrape();
                 Driver.Quit();
@@ -153,6 +153,8 @@ namespace WheelDealz
 
         static void SaveCarListToDisk()
         {
+            Cars = Cars.OrderByDescending(c => Convert.ToDateTime(c.ScrapeDate)).ToList();
+
             var result = "";
             foreach (var car in Cars)
             {
